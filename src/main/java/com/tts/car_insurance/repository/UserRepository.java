@@ -12,4 +12,6 @@ public interface UserRepository extends MongoRepository<User,String> {
     long deleteUserById(String id);
 
     boolean existsByRole(String admin);
+
+    boolean existsByEmail(String email);
 }
