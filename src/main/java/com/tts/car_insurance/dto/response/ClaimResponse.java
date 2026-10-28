@@ -2,6 +2,7 @@ package com.tts.car_insurance.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "Claim Response DTO")
@@ -35,7 +36,7 @@ public record ClaimResponse(
         String status,
 
         @Schema(description = "Date when the claim occurred", example = "2026-10-15")
-        String claimDate,
+        LocalDate claimDate,
 
         @Schema(description = "Timestamp when the record was created", example = "2026-10-15T06:45:00")
         LocalDateTime createdAt,
