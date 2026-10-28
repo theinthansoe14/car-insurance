@@ -149,7 +149,7 @@ public class ClaimServiceImpl implements ClaimService {
                 claim.getPayoutAmount(),
                 claim.getDescription(),
                 claim.getStatus(),
-                claim.getClaimNumber(),
+                claim.getClaimDate(),
                 claim.getCreatedAt(),
                 claim.getUpdatedAt()
         );

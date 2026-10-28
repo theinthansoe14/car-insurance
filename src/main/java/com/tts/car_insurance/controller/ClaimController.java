@@ -92,6 +92,7 @@ public class ClaimController {
             @ApiResponse(responseCode = "404", description = "Claim not found", content = @Content)
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('USER') and #request.userId() == authentication.principal.id")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Unique ID of the claim to delete", example = "65a4b3c21f00000000000001", required = true)
             @PathVariable @NotBlank(message = "ID cannot be blank") String id
