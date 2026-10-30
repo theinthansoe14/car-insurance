@@ -9,11 +9,6 @@ import com.tts.car_insurance.model.User;
 import com.tts.car_insurance.repository.UserRepository;
 import com.tts.car_insurance.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,7 +22,6 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final MongoTemplate mongoTemplate;
     private final PasswordEncoder passwordEncoder;
 
     private static final String CACHE_PREFIX = "user:";
@@ -85,19 +79,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse update(String id, UserRequest request) {
 
-        Query query = new Query(Criteria.where("_id").is(id));
-
-
-        Update update = new Update()
-                .set("name", request.name())
-                .set("email", request.email())
-                .set("password", passwordEncoder.encode(request.password()))
-                .set("dateOfBirth", request.dateOfBirth())
-                .set("updatedAt", LocalDateTime.now());
-
-        FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(false);
-
-        User updatedUser = mongoTemplate.findAndModify(query,update,options,User.class);
+        User updatedUser = userRepository.updateUserDetails(
+                id,
+                request.name(),
+                request.email(),
+                passwordEncoder.encode(request.password()),
+                request.dateOfBirth(),
+                LocalDateTime.now()
+        );
 
         if (updatedUser == null) {
             throw new UserNotFoundException("User Not Found with the id :" + id);
