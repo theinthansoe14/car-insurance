@@ -3,7 +3,7 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.UserRequest;
 import com.tts.car_insurance.dto.response.UserResponse;
-import com.tts.car_insurance.exception.EmailAlreadyExistException;
+import com.tts.car_insurance.exception.impl.EmailAlreadyExistException;
 import com.tts.car_insurance.exception.impl.UserNotFoundException;
 import com.tts.car_insurance.model.User;
 import com.tts.car_insurance.repository.UserRepository;
