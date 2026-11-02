@@ -108,7 +108,7 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
-    @PostMapping("/{id}")
+    @PostMapping("/{id}/vehicles")
     public ResponseEntity<VehicleResponse> createVehicle(
             @Parameter(description = "Unique ID of the user to associate the vehicle with", example = "65a4b3c21f00000000000001", required = true)
             @PathVariable @NotBlank(message = "ID cannot be blank") String id,
