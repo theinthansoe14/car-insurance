@@ -1,7 +1,6 @@
 package com.tts.car_insurance.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -43,4 +42,4 @@ public record ClaimResponse(
 
         @Schema(description = "Timestamp when the record was last updated", example = "2026-10-15T06:45:00")
         LocalDateTime updatedAt
-) implements Serializable {}
+)  {}
