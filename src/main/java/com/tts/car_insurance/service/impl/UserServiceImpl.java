@@ -9,6 +9,7 @@ import com.tts.car_insurance.model.User;
 import com.tts.car_insurance.repository.UserRepository;
 import com.tts.car_insurance.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -36,22 +37,24 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse save(UserRequest userRequest) {
 
-        if (userRepository.existsByEmail(userRequest.email())){
-            throw new EmailAlreadyExistException(userRequest.email()+" already exist with the ");
-        }
 
         User user = toEntity(userRequest);
-        User savedUser = userRepository.save(user);
 
-        UserResponse userResponse= toResponse(savedUser);
+        try {
+            User savedUser = userRepository.save(user);
 
-        redisTemplate.opsForValue().set(
-                CACHE_PREFIX + userResponse.id(),
-                userResponse ,
-                CACHE_TTL
-        );
+            UserResponse userResponse = toResponse(savedUser);
 
-        return userResponse;
+            redisTemplate.opsForValue().set(
+                    CACHE_PREFIX + userResponse.id(),
+                    userResponse,
+                    CACHE_TTL
+            );
+
+            return userResponse;
+        }catch (DuplicateKeyException e){
+            throw new EmailAlreadyExistException("Email :" + userRequest.email() + " is already exist");
+        }
     }
 
     @Override
