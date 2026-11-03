@@ -2,6 +2,7 @@ package com.tts.car_insurance.model;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,8 @@ public class Vehicle {
     @Id
     private String id;
     private String userId;
+
+    @Indexed(unique = true)
     private String licensePlate;
     private String brand;
     private String model;
