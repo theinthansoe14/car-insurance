@@ -2,10 +2,12 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.VehicleRequest;
 import com.tts.car_insurance.dto.response.VehicleResponse;
+import com.tts.car_insurance.exception.impl.LicensePlateAlreadyExistException;
 import com.tts.car_insurance.model.Vehicle;
 import com.tts.car_insurance.repository.VehicleRepository;
 import com.tts.car_insurance.service.VehicleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +29,18 @@ public class VehicleServiceImpl implements VehicleService {
 
         Vehicle vehicle = toEntity(request);
         vehicle.setUserId(userId);
-        Vehicle savedVehicle = vehicleRepository.save(vehicle);
 
-        VehicleResponse vehicleResponse = toResponse(savedVehicle);
+        try {
+            Vehicle savedVehicle = vehicleRepository.save(vehicle);
 
-        redisTemplate.opsForValue().set( CACHE_PREFIX + vehicleResponse.id(), vehicleResponse , CACHE_TTL);
+            VehicleResponse vehicleResponse = toResponse(savedVehicle);
 
-        return vehicleResponse;
+            redisTemplate.opsForValue().set(CACHE_PREFIX + vehicleResponse.id(), vehicleResponse, CACHE_TTL);
+
+            return vehicleResponse;
+        }catch (DuplicateKeyException e){
+            throw new LicensePlateAlreadyExistException("LicensePlate :"+request.licensePlate()+" is already exist");
+        }
     }
     //vehicle:3345gjjkh
 
