@@ -1,6 +1,7 @@
 package com.tts.car_insurance.exception;
 
 import com.tts.car_insurance.exception.base.AlreadyExistException;
+import com.tts.car_insurance.exception.base.EligibilityException;
 import com.tts.car_insurance.exception.base.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -28,6 +29,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AlreadyExistException.class)
     public ResponseEntity<GlobalErrorResponse> handleAlreadyExist(AlreadyExistException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(EligibilityException.class)
+    public ResponseEntity<GlobalErrorResponse> handleEligibilityException(EligibilityException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
