@@ -52,10 +52,6 @@ public class PolicyServiceImpl implements PolicyService {
 
         int userAge = Period.between(userDOB, LocalDate.now()).getYears();
 
-        if (userAge < 18) {
-            throw new UnderageException("User must be at least 18 years old to create a policy ");
-        }
-
         Vehicle vehicle = getVehicleDetails(request.vehicleId());
 
         double premiumAmount = calculatePremium(vehicle.getCarValue(), vehicle.getYear(), userAge);
