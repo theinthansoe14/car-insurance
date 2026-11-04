@@ -2,6 +2,7 @@ package com.tts.car_insurance.model;
 
 
 import lombok.*;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
@@ -18,6 +19,8 @@ public class User {
 
     private String id;
     private String name;
+
+    @Indexed(unique = true)
     private String email;
     private String password;
     private String role;

@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.List;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
