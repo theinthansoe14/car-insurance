@@ -3,6 +3,7 @@ package com.tts.car_insurance.service.impl;
 import com.tts.car_insurance.dto.request.PolicyRequest;
 import com.tts.car_insurance.dto.response.PolicyResponse;
 import com.tts.car_insurance.exception.impl.PolicyNotFoundException;
+import com.tts.car_insurance.exception.impl.UnderageException;
 import com.tts.car_insurance.exception.impl.UserNotFoundException;
 import com.tts.car_insurance.exception.impl.VehicleNotFoundException;
 import com.tts.car_insurance.model.Policy;
@@ -51,9 +52,15 @@ public class PolicyServiceImpl implements PolicyService {
 
         LocalDate userDOB = getUserDOB(request.userId());
 
+        int userAge = Period.between(userDOB, LocalDate.now()).getYears();
+
+        if(userAge<18){
+            throw new UnderageException("User must be at least 18 years old to create a policy ");
+        }
+
         Vehicle vehicle = getVehicleDetails(request.vehicleId());
 
-        double premiumAmount = calculatePremium(vehicle.getCarValue(), vehicle.getYear(),userDOB);
+        double premiumAmount = calculatePremium(vehicle.getCarValue(), vehicle.getYear(),userAge);
 
         Policy policy = toEntity(request,premiumAmount);
         Policy savedPolicy = policyRepository.save(policy);
@@ -191,11 +198,9 @@ public class PolicyServiceImpl implements PolicyService {
         );
     }
 
-    private double calculatePremium(double carValue, int carYear, LocalDate userDOB) {
+    private double calculatePremium(double carValue, int carYear, int userAge) {
 
         double premiumAmount = carValue * 0.03;
-
-        int userAge = Period.between(userDOB, LocalDate.now()).getYears();
 
         if (userAge < 20) {
             premiumAmount *= 1.2;
