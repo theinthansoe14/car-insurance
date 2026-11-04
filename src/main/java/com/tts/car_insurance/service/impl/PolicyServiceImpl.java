@@ -2,10 +2,7 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.PolicyRequest;
 import com.tts.car_insurance.dto.response.PolicyResponse;
-import com.tts.car_insurance.exception.impl.PolicyNotFoundException;
-import com.tts.car_insurance.exception.impl.UnderageException;
-import com.tts.car_insurance.exception.impl.UserNotFoundException;
-import com.tts.car_insurance.exception.impl.VehicleNotFoundException;
+import com.tts.car_insurance.exception.impl.*;
 import com.tts.car_insurance.model.Policy;
 import com.tts.car_insurance.model.User;
 import com.tts.car_insurance.model.Vehicle;
@@ -15,6 +12,7 @@ import com.tts.car_insurance.repository.VehicleRepository;
 import com.tts.car_insurance.security.UserPrincipal;
 import com.tts.car_insurance.service.PolicyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -54,23 +52,28 @@ public class PolicyServiceImpl implements PolicyService {
 
         int userAge = Period.between(userDOB, LocalDate.now()).getYears();
 
-        if(userAge<18){
+        if (userAge < 18) {
             throw new UnderageException("User must be at least 18 years old to create a policy ");
         }
 
         Vehicle vehicle = getVehicleDetails(request.vehicleId());
 
-        double premiumAmount = calculatePremium(vehicle.getCarValue(), vehicle.getYear(),userAge);
+        double premiumAmount = calculatePremium(vehicle.getCarValue(), vehicle.getYear(), userAge);
 
-        Policy policy = toEntity(request,premiumAmount);
-        Policy savedPolicy = policyRepository.save(policy);
-        PolicyResponse policyResponse = toResponse(savedPolicy);
+        Policy policy = toEntity(request, premiumAmount);
 
-        redisTemplate.opsForValue().set(CACHE_PREFIX+policyResponse.id() ,policyResponse ,CACHE_TTL);
+        try {
+            Policy savedPolicy = policyRepository.save(policy);
+            PolicyResponse policyResponse = toResponse(savedPolicy);
 
-       emailService.sendEmailWithAsync(savedPolicy);
+            redisTemplate.opsForValue().set(CACHE_PREFIX + policyResponse.id(), policyResponse, CACHE_TTL);
 
-        return policyResponse;
+            emailService.sendEmailWithAsync(savedPolicy);
+
+            return policyResponse;
+        }catch (DuplicateKeyException e){
+            throw new PolicyNumberAlreadyExistException("Policy number :" +request.policyNumber()+ " is already exist" ) ;
+        }
     }
     //policy:557ryjg
 
