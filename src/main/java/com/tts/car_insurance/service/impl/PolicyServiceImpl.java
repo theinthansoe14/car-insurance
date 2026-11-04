@@ -9,7 +9,6 @@ import com.tts.car_insurance.model.Vehicle;
 import com.tts.car_insurance.repository.PolicyRepository;
 import com.tts.car_insurance.repository.UserRepository;
 import com.tts.car_insurance.repository.VehicleRepository;
-import com.tts.car_insurance.security.UserPrincipal;
 import com.tts.car_insurance.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
@@ -20,8 +19,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -99,20 +96,9 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
-    public List<PolicyResponse> findAll() {
+    public List<PolicyResponse> findAllByUserId(String userId) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(role->role.getAuthority().equals("ROLE_ADMIN"));
-
-        if(isAdmin){
-            return policyRepository.findAll().stream()
-                    .map(this::toResponse)
-                    .toList();
-        }
-
-        return policyRepository.findByUserId(principal.id()).stream()
+        return policyRepository.findByUserId(userId).stream()
                 .map(this::toResponse)
                 .toList();
     }
