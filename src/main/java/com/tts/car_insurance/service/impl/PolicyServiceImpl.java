@@ -2,6 +2,8 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.PolicyRequest;
 import com.tts.car_insurance.dto.response.PolicyResponse;
+import com.tts.car_insurance.dto.response.UserResponse;
+import com.tts.car_insurance.dto.response.VehicleResponse;
 import com.tts.car_insurance.exception.impl.*;
 import com.tts.car_insurance.model.Policy;
 import com.tts.car_insurance.model.User;
@@ -56,9 +58,9 @@ public class PolicyServiceImpl implements PolicyService {
             throw new UnderAgeException("User age must be over 18");
         }
 
-        Vehicle vehicle = getVehicleDetails(request.vehicleId());
+        VehicleResponse vehicle = getVehicleDetails(request.vehicleId());
 
-        double premiumAmount = calculatePremium(vehicle.getCarValue(), vehicle.getYear(), userAge);
+        double premiumAmount = calculatePremium(vehicle.carValue(), vehicle.year(), userAge);
 
         Policy policy = toEntity(request, premiumAmount);
 
@@ -221,11 +223,11 @@ public class PolicyServiceImpl implements PolicyService {
 
 
 
-    private Vehicle getVehicleDetails(String vehicleId) {
+    private VehicleResponse getVehicleDetails(String vehicleId) {
 
         String cacheKey = "vehicle:" + vehicleId;
 
-        Vehicle cachedVehicle = (Vehicle) redisTemplate.opsForValue().get(cacheKey);
+        VehicleResponse cachedVehicle = (VehicleResponse) redisTemplate.opsForValue().get(cacheKey);
 
         if (cachedVehicle != null) {
             return cachedVehicle;
@@ -234,9 +236,11 @@ public class PolicyServiceImpl implements PolicyService {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(()-> new VehicleNotFoundException("Vehicle Not Found with the id " + vehicleId));
 
-        redisTemplate.opsForValue().set(cacheKey , vehicle , CACHE_TTL);
+        VehicleResponse vehicleResponse = toResponseVehicle(vehicle);
 
-        return vehicle;
+        redisTemplate.opsForValue().set(cacheKey , vehicleResponse , CACHE_TTL);
+
+        return vehicleResponse;
 
     }
 
@@ -244,19 +248,49 @@ public class PolicyServiceImpl implements PolicyService {
 
         String cacheKey = "user:"+userId;
 
-        User cachedUser = (User) redisTemplate.opsForValue().get(cacheKey);
+        UserResponse cachedUser = (UserResponse) redisTemplate.opsForValue().get(cacheKey);
 
         if(cachedUser != null){
-            return cachedUser.getDateOfBirth();
+            return cachedUser.dateOfBirth();
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException("User Not Found with the id "+ userId));
 
-        redisTemplate.opsForValue().set(cacheKey , user , CACHE_TTL);
+        UserResponse userResponse = toResponseUser(user);
+        redisTemplate.opsForValue().set(cacheKey , userResponse , CACHE_TTL);
 
         return user.getDateOfBirth();
     }
 
+    private VehicleResponse toResponseVehicle(Vehicle vehicle) {
+        return new VehicleResponse(
+                vehicle.getId(),
+                vehicle.getUserId(),
+                vehicle.getLicensePlate(),
+                vehicle.getBrand(),
+                vehicle.getModel(),
+                vehicle.getYear(),
+                vehicle.getCarValue(),
+                vehicle.getCreatedAt(),
+                vehicle.getUpdatedAt()
+        );
+
+    }
+
+    private UserResponse toResponseUser(User user){
+
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getDateOfBirth(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+
+        );
+
+    }
 
 }
