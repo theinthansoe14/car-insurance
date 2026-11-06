@@ -18,11 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 
 @Tag(name = "Policy Management", description = "Endpoints for managing insurance policies")
@@ -64,11 +62,13 @@ public class PolicyController {
     @Operation(summary = "Get all policies", description = "Retrieves a list of all insurance policies")
     @ApiResponse(responseCode = "200", description = "List of policies retrieved successfully",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = PolicyResponse.class))))
-    @GetMapping
-    public ResponseEntity<List<PolicyResponse>> findAll(
-            @AuthenticationPrincipal Principal principal
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(policyService.findAll());
+    @GetMapping("/users/{userId}")
+    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
+    public ResponseEntity<List<PolicyResponse>> findAllPoliciesByUserId(
+            @Parameter(description = "Unique ID of the user", example = "65a4b3c21f00000000000001", required = true)
+            @PathVariable @NotBlank(message = "ID cannot be blank") String userId)
+             {
+        return ResponseEntity.status(HttpStatus.OK).body(policyService.findAllByUserId(userId));
     }
 
     @Operation(summary = "Update policy", description = "Updates an existing policy by its unique ID")
