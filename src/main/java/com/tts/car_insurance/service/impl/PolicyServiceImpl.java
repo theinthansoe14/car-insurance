@@ -14,13 +14,13 @@ import com.tts.car_insurance.repository.VehicleRepository;
 import com.tts.car_insurance.service.PolicyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -108,19 +108,21 @@ public class PolicyServiceImpl implements PolicyService {
     @Override
     public PolicyResponse update(String id, PolicyRequest request) {
 
-        Query query = new Query(Criteria.where("_id").is(id));
+        vehicleRepository.findById(request.vehicleId())
+                .map(vehicle -> vehicle.getUserId().equals(id))
+                .orElseThrow(()->new AccessDeniedException("Vehicle does not belong to this user or not found"));
 
-        Update update = new Update()
-                .set("policyNumber", request.policyNumber())
-                .set("userId", request.userId())
-                .set("vehicleId", request.vehicleId())
-                .set("startDate", request.startDate())
-                .set("endDate", request.endDate())
-                .set("hasClaim", request.hasClaim())
-                .set("updatedAt", LocalDateTime.now());
+       Policy updatedPolicy = policyRepository.updatePolicyDetails(
+               id,
+               request.policyNumber(),
+               request.userId(),
+               request.vehicleId(),
+               request.startDate(),
+               request.endDate(),
+               request.hasClaim(),
+               LocalDateTime.now()
 
-        FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(false);
-        Policy updatedPolicy = mongoTemplate.findAndModify(query, update, options, Policy.class);
+        );
 
         if (updatedPolicy == null) {
             throw new PolicyNotFoundException("Policy not found with id: " + id);
