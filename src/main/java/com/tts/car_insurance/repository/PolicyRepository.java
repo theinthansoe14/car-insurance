@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.repository.Query;
 
 import java.util.List;
 
-public interface PolicyRepository extends MongoRepository<Policy,String> {
+public interface PolicyRepository extends MongoRepository<Policy,String> , CustomPolicyRepository {
 
     @Query(value = "{ '_id' : ?0 }", delete = true)
     long deleteByPolicyId(String id);
