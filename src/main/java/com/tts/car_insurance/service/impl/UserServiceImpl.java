@@ -9,6 +9,7 @@ import com.tts.car_insurance.model.User;
 import com.tts.car_insurance.repository.UserRepository;
 import com.tts.car_insurance.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
