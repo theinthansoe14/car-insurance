@@ -2,14 +2,15 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.ClaimRequest;
 import com.tts.car_insurance.dto.response.ClaimResponse;
-import com.tts.car_insurance.dto.response.PolicyResponse;
 import com.tts.car_insurance.exception.impl.ClaimNotFoundException;
+import com.tts.car_insurance.exception.impl.ClaimNumberAlreadyExistException;
 import com.tts.car_insurance.exception.impl.PolicyNotFoundException;
 import com.tts.car_insurance.model.Claim;
 import com.tts.car_insurance.repository.ClaimRepository;
 import com.tts.car_insurance.security.UserPrincipal;
 import com.tts.car_insurance.service.ClaimService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -38,13 +39,17 @@ public class ClaimServiceImpl implements ClaimService {
     @Override
     public ClaimResponse save(ClaimRequest request) {
         Claim claim = toEntity(request);
-        Claim savedClaim = claimRepository.save(claim);
 
-        ClaimResponse claimResponse = toResponse(savedClaim);
+        try {
+            Claim savedClaim = claimRepository.save(claim);
+            ClaimResponse claimResponse = toResponse(savedClaim);
 
-        redisTemplate.opsForValue().set(CACHE_PREFIX + claimResponse.id() , claimResponse ,CACHE_TTL);
+            redisTemplate.opsForValue().set(CACHE_PREFIX + claimResponse.id(), claimResponse, CACHE_TTL);
 
-        return claimResponse;
+            return claimResponse;
+        }catch (DuplicateKeyException e){
+            throw new ClaimNumberAlreadyExistException("Claim Number:"+request.claimNumber()+" is already exist");
+        }
     }
 
     @Override
