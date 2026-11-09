@@ -4,7 +4,6 @@ package com.tts.car_insurance.controller;
 import com.tts.car_insurance.dto.request.LoginRequest;
 import com.tts.car_insurance.dto.response.LoginResponse;
 import com.tts.car_insurance.service.AuthenticationService;
-import com.tts.car_insurance.service.impl.AuthenticationServiceImpl;
 import com.tts.car_insurance.service.impl.UserServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

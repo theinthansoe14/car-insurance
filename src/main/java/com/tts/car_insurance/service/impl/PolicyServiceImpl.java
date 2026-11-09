@@ -7,11 +7,10 @@ import com.tts.car_insurance.dto.response.VehicleResponse;
 import com.tts.car_insurance.exception.impl.*;
 import com.tts.car_insurance.model.Policy;
 import com.tts.car_insurance.model.User;
-import com.tts.car_insurance.model.Vehicle;
 import com.tts.car_insurance.repository.PolicyRepository;
 import com.tts.car_insurance.repository.UserRepository;
-import com.tts.car_insurance.repository.VehicleRepository;
 import com.tts.car_insurance.service.PolicyService;
+import com.tts.car_insurance.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -20,7 +19,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -35,10 +33,10 @@ public class PolicyServiceImpl implements PolicyService {
 
     private final PolicyRepository policyRepository;
     private final UserRepository userRepository;
-    private final VehicleRepository vehicleRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final MongoTemplate mongoTemplate;
     private final EmailService emailService;
+    private final VehicleService vehicleService;
 
     private static final String CACHE_PREFIX = "policy:";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
@@ -55,7 +53,7 @@ public class PolicyServiceImpl implements PolicyService {
             throw new UnderAgeException("User age must be over 18");
         }
 
-        VehicleResponse vehicle = getVehicleDetails(request.vehicleId());
+        VehicleResponse vehicle = vehicleService.getVehicleAndVerifyOwnership(request.vehicleId(),request.userId());
 
         double premiumAmount = calculatePremium(vehicle.carValue(), vehicle.year(), userAge);
 
@@ -108,9 +106,7 @@ public class PolicyServiceImpl implements PolicyService {
     @Override
     public PolicyResponse update(String id, PolicyRequest request) {
 
-        vehicleRepository.findById(request.vehicleId())
-                .map(vehicle -> vehicle.getUserId().equals(id))
-                .orElseThrow(()->new AccessDeniedException("Vehicle does not belong to this user or not found"));
+        vehicleService.getVehicleAndVerifyOwnership(request.vehicleId(),request.userId());
 
        Policy updatedPolicy = policyRepository.updatePolicyDetails(
                id,
@@ -209,29 +205,6 @@ public class PolicyServiceImpl implements PolicyService {
         return premiumAmount;
     }
 
-
-
-    private VehicleResponse getVehicleDetails(String vehicleId) {
-
-        String cacheKey = "vehicle:" + vehicleId;
-
-        VehicleResponse cachedVehicle = (VehicleResponse) redisTemplate.opsForValue().get(cacheKey);
-
-        if (cachedVehicle != null) {
-            return cachedVehicle;
-        }
-
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(()-> new VehicleNotFoundException("Vehicle Not Found with the id " + vehicleId));
-
-        VehicleResponse vehicleResponse = toResponseVehicle(vehicle);
-
-        redisTemplate.opsForValue().set(cacheKey , vehicleResponse , CACHE_TTL);
-
-        return vehicleResponse;
-
-    }
-
     private LocalDate getUserDOB(String userId) {
 
         String cacheKey = "user:"+userId;
@@ -251,20 +224,6 @@ public class PolicyServiceImpl implements PolicyService {
         return user.getDateOfBirth();
     }
 
-    private VehicleResponse toResponseVehicle(Vehicle vehicle) {
-        return new VehicleResponse(
-                vehicle.getId(),
-                vehicle.getUserId(),
-                vehicle.getLicensePlate(),
-                vehicle.getBrand(),
-                vehicle.getModel(),
-                vehicle.getYear(),
-                vehicle.getCarValue(),
-                vehicle.getCreatedAt(),
-                vehicle.getUpdatedAt()
-        );
-
-    }
 
     private UserResponse toResponseUser(User user){
 

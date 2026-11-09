@@ -2,7 +2,6 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.ClaimRequest;
 import com.tts.car_insurance.dto.response.ClaimResponse;
-import com.tts.car_insurance.dto.response.PolicyResponse;
 import com.tts.car_insurance.exception.impl.ClaimNotFoundException;
 import com.tts.car_insurance.exception.impl.PolicyNotFoundException;
 import com.tts.car_insurance.model.Claim;

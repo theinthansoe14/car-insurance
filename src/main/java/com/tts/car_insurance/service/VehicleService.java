@@ -5,4 +5,6 @@ import com.tts.car_insurance.dto.response.VehicleResponse;
 
 public interface VehicleService {
     VehicleResponse save(String userId,VehicleRequest request);
+
+    VehicleResponse getVehicleAndVerifyOwnership(String vehicleId, String userId);
 }
