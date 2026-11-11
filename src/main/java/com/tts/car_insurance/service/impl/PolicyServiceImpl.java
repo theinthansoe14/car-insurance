@@ -7,14 +7,12 @@ import com.tts.car_insurance.dto.response.VehicleResponse;
 import com.tts.car_insurance.exception.impl.*;
 import com.tts.car_insurance.model.Policy;
 import com.tts.car_insurance.model.User;
-import com.tts.car_insurance.model.Vehicle;
 import com.tts.car_insurance.repository.PolicyRepository;
 import com.tts.car_insurance.repository.UserRepository;
-import com.tts.car_insurance.repository.VehicleRepository;
 import com.tts.car_insurance.service.PolicyService;
+import com.tts.car_insurance.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -35,10 +33,10 @@ public class PolicyServiceImpl implements PolicyService {
 
     private final PolicyRepository policyRepository;
     private final UserRepository userRepository;
-    private final VehicleRepository vehicleRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final MongoTemplate mongoTemplate;
     private final EmailService emailService;
+    private final VehicleService vehicleService;
 
     private static final String CACHE_PREFIX = "policy:";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
@@ -55,7 +53,7 @@ public class PolicyServiceImpl implements PolicyService {
             throw new UnderAgeException("User age must be over 18");
         }
 
-        VehicleResponse vehicle = getVehicleDetails(request.vehicleId());
+        VehicleResponse vehicle = vehicleService.getVehicleAndVerifyOwnership(request.vehicleId(),request.userId());
 
         double premiumAmount = calculatePremium(vehicle.carValue(), vehicle.year(), userAge);
 
@@ -108,19 +106,19 @@ public class PolicyServiceImpl implements PolicyService {
     @Override
     public PolicyResponse update(String id, PolicyRequest request) {
 
-        Query query = new Query(Criteria.where("_id").is(id));
+        vehicleService.getVehicleAndVerifyOwnership(request.vehicleId(),request.userId());
 
-        Update update = new Update()
-                .set("policyNumber", request.policyNumber())
-                .set("userId", request.userId())
-                .set("vehicleId", request.vehicleId())
-                .set("startDate", request.startDate())
-                .set("endDate", request.endDate())
-                .set("hasClaim", request.hasClaim())
-                .set("updatedAt", LocalDateTime.now());
+       Policy updatedPolicy = policyRepository.updatePolicyDetails(
+               id,
+               request.policyNumber(),
+               request.userId(),
+               request.vehicleId(),
+               request.startDate(),
+               request.endDate(),
+               request.hasClaim(),
+               LocalDateTime.now()
 
-        FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(false);
-        Policy updatedPolicy = mongoTemplate.findAndModify(query, update, options, Policy.class);
+        );
 
         if (updatedPolicy == null) {
             throw new PolicyNotFoundException("Policy not found with id: " + id);
@@ -207,29 +205,6 @@ public class PolicyServiceImpl implements PolicyService {
         return premiumAmount;
     }
 
-
-
-    private VehicleResponse getVehicleDetails(String vehicleId) {
-
-        String cacheKey = "vehicle:" + vehicleId;
-
-        VehicleResponse cachedVehicle = (VehicleResponse) redisTemplate.opsForValue().get(cacheKey);
-
-        if (cachedVehicle != null) {
-            return cachedVehicle;
-        }
-
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(()-> new VehicleNotFoundException("Vehicle Not Found with the id " + vehicleId));
-
-        VehicleResponse vehicleResponse = toResponseVehicle(vehicle);
-
-        redisTemplate.opsForValue().set(cacheKey , vehicleResponse , CACHE_TTL);
-
-        return vehicleResponse;
-
-    }
-
     private LocalDate getUserDOB(String userId) {
 
         String cacheKey = "user:"+userId;
@@ -249,20 +224,6 @@ public class PolicyServiceImpl implements PolicyService {
         return user.getDateOfBirth();
     }
 
-    private VehicleResponse toResponseVehicle(Vehicle vehicle) {
-        return new VehicleResponse(
-                vehicle.getId(),
-                vehicle.getUserId(),
-                vehicle.getLicensePlate(),
-                vehicle.getBrand(),
-                vehicle.getModel(),
-                vehicle.getYear(),
-                vehicle.getCarValue(),
-                vehicle.getCreatedAt(),
-                vehicle.getUpdatedAt()
-        );
-
-    }
 
     private UserResponse toResponseUser(User user){
 

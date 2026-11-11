@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<GlobalErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.FORBIDDEN, "Access Denied: You lack permissions for this resource.", request);
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
