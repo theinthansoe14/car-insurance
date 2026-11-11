@@ -11,6 +11,7 @@ import com.tts.car_insurance.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -57,6 +58,26 @@ public class VehicleServiceImpl implements VehicleService {
                             ") exceeds the maximum car value limit (" + vehicle.getCarValue() + ")"
             );
         }
+    @PostAuthorize("hasRole('ADMIN') or returnObject.userId == #userId")
+    public VehicleResponse getVehicleAndVerifyOwnership(String vehicleId, String userId) {
+
+        String cacheKey = CACHE_PREFIX + vehicleId;
+
+        VehicleResponse cachedVehicle = (VehicleResponse) redisTemplate.opsForValue().get(cacheKey);
+
+        if (cachedVehicle != null) {
+            return cachedVehicle;
+        }
+
+       Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(()->new VehicleNotFoundException("Vehicle not found with id :"+vehicleId));
+
+        VehicleResponse vehicleResponse = toResponse(vehicle);
+
+        redisTemplate.opsForValue().set(cacheKey , vehicleResponse , CACHE_TTL);
+
+        return vehicleResponse;
+
     }
 
     private Vehicle toEntity(VehicleRequest request){

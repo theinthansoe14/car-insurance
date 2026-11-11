@@ -7,4 +7,5 @@ public interface VehicleService {
     VehicleResponse save(String userId,VehicleRequest request);
 
     void validateRepairCost(String vehicleId, double repairCost);
+    VehicleResponse getVehicleAndVerifyOwnership(String vehicleId, String userId);
 }
