@@ -6,6 +6,7 @@ import com.tts.car_insurance.dto.response.PolicyResponse;
 import com.tts.car_insurance.exception.impl.ClaimNotFoundException;
 import com.tts.car_insurance.exception.impl.ClaimNumberAlreadyExistException;
 import com.tts.car_insurance.exception.impl.PolicyNotFoundException;
+import com.tts.car_insurance.helper.ClaimCalculationHelper;
 import com.tts.car_insurance.model.Claim;
 import com.tts.car_insurance.repository.ClaimRepository;
 import com.tts.car_insurance.security.UserPrincipal;
@@ -37,16 +38,21 @@ public class ClaimServiceImpl implements ClaimService {
     private final MongoTemplate mongoTemplate;
     private final PolicyService policyService;
     private final VehicleService vehicleService;
+    private final ClaimCalculationHelper claimCalculationHelper;
 
     private static final String CACHE_PREFIX ="claim:";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
 
     @Override
     public ClaimResponse save(ClaimRequest request) {
-        Claim claim = toEntity(request);
 
        PolicyResponse policyResponse = policyService.findById(request.policyId());
        vehicleService.validateRepairCost(policyResponse.vehicleId(), request.repairCost());
+
+        double deductible = claimCalculationHelper.calculateDeductible(request.repairCost());
+        double payoutAmount = claimCalculationHelper.calculatePayoutAmount(request.repairCost(), deductible);
+
+        Claim claim = toEntity(request, deductible , payoutAmount);
 
         try {
             Claim savedClaim = claimRepository.save(claim);
@@ -133,10 +139,7 @@ public class ClaimServiceImpl implements ClaimService {
         return claimResponse;
     }
 
-    private Claim toEntity(ClaimRequest request){
-
-        double deductible = request.repairCost() * 0.1;
-        double payoutAmount = request.repairCost() - deductible;
+    private Claim toEntity(ClaimRequest request, double deductible, double payoutAmount){
 
         return Claim.builder()
                 .userId(request.userId())
