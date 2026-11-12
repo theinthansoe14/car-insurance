@@ -78,7 +78,7 @@ public class PolicyServiceImpl implements PolicyService {
 
 
     @Override
-    @PostAuthorize("hasRole('ADMIN') or returnObject.userId == authentication.principal.id")
+    @PostAuthorize("returnObject.userId == authentication.principal.id")
     public PolicyResponse findById(String id) {
         String cacheKey = CACHE_PREFIX+id;
         PolicyResponse cachedPolicy =  (PolicyResponse)redisTemplate.opsForValue().get(cacheKey);
