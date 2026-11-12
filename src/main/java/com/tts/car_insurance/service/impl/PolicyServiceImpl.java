@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -77,6 +78,7 @@ public class PolicyServiceImpl implements PolicyService {
 
 
     @Override
+    @PostAuthorize("hasRole('ADMIN') or returnObject.userId == authentication.principal.id")
     public PolicyResponse findById(String id) {
         String cacheKey = CACHE_PREFIX+id;
         PolicyResponse cachedPolicy =  (PolicyResponse)redisTemplate.opsForValue().get(cacheKey);

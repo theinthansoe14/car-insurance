@@ -58,6 +58,7 @@ public class VehicleServiceImpl implements VehicleService {
                             ") exceeds the maximum car value limit (" + vehicle.getCarValue() + ")"
             );
         }
+    }
     @PostAuthorize("hasRole('ADMIN') or returnObject.userId == #userId")
     public VehicleResponse getVehicleAndVerifyOwnership(String vehicleId, String userId) {
 
