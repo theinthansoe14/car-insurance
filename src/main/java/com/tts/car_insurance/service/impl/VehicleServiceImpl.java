@@ -2,6 +2,7 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.VehicleRequest;
 import com.tts.car_insurance.dto.response.VehicleResponse;
+import com.tts.car_insurance.exception.impl.ExceedsVehicleValueException;
 import com.tts.car_insurance.exception.impl.LicensePlateAlreadyExistException;
 import com.tts.car_insurance.exception.impl.VehicleNotFoundException;
 import com.tts.car_insurance.model.Vehicle;
@@ -46,6 +47,17 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    public void validateRepairCost(String vehicleId, double repairCost) {
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new VehicleNotFoundException("Vehicle not found with id: " + vehicleId));
+
+        if (repairCost > vehicle.getCarValue()) {
+            throw new ExceedsVehicleValueException(
+                    "Repair cost (" + repairCost +
+                            ") exceeds the maximum car value limit (" + vehicle.getCarValue() + ")"
+            );
+        }
     @PostAuthorize("hasRole('ADMIN') or returnObject.userId == #userId")
     public VehicleResponse getVehicleAndVerifyOwnership(String vehicleId, String userId) {
 

@@ -2,6 +2,7 @@ package com.tts.car_insurance.service.impl;
 
 import com.tts.car_insurance.dto.request.ClaimRequest;
 import com.tts.car_insurance.dto.response.ClaimResponse;
+import com.tts.car_insurance.dto.response.PolicyResponse;
 import com.tts.car_insurance.exception.impl.ClaimNotFoundException;
 import com.tts.car_insurance.exception.impl.ClaimNumberAlreadyExistException;
 import com.tts.car_insurance.exception.impl.PolicyNotFoundException;
@@ -9,6 +10,8 @@ import com.tts.car_insurance.model.Claim;
 import com.tts.car_insurance.repository.ClaimRepository;
 import com.tts.car_insurance.security.UserPrincipal;
 import com.tts.car_insurance.service.ClaimService;
+import com.tts.car_insurance.service.PolicyService;
+import com.tts.car_insurance.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -32,6 +35,8 @@ public class ClaimServiceImpl implements ClaimService {
     private final ClaimRepository claimRepository;
     private final RedisTemplate<String,Object> redisTemplate;
     private final MongoTemplate mongoTemplate;
+    private final PolicyService policyService;
+    private final VehicleService vehicleService;
 
     private static final String CACHE_PREFIX ="claim:";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
@@ -39,6 +44,9 @@ public class ClaimServiceImpl implements ClaimService {
     @Override
     public ClaimResponse save(ClaimRequest request) {
         Claim claim = toEntity(request);
+
+       PolicyResponse policyResponse = policyService.findById(request.policyId());
+       vehicleService.validateRepairCost(policyResponse.vehicleId(), request.repairCost());
 
         try {
             Claim savedClaim = claimRepository.save(claim);
@@ -104,6 +112,7 @@ public class ClaimServiceImpl implements ClaimService {
 
     @Override
     public ClaimResponse updateStatus(String id, String status) {
+
 
         Query query = new Query(Criteria.where("_id").is(id));
 
