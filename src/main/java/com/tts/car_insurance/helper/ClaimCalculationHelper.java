@@ -1,5 +1,8 @@
 package com.tts.car_insurance.helper;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class ClaimCalculationHelper {
 
     private static final double DEDUCTIBLE_RATE = 0.10;
